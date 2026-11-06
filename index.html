@@ -57,8 +57,15 @@
             background: rgba(255,255,255,0.25);
             padding: 2px 8px;
             border-radius: 12px;
-            margin-top: 2px;
-            font-weight: 500;
+            margin-top: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: background 0.2s;
+        }
+        .user-tag:hover {
+            background: rgba(255,255,255,0.4);
         }
 
         .admin-badge {
@@ -509,7 +516,7 @@
     <header>
         <div class="header-left">
             <span id="app-header-title" style="font-weight:700;">Family Recipes</span>
-            <span id="userProfileTag" class="user-tag">Logged in as: Guest</span>
+            <button id="userProfileTag" class="user-tag" onclick="window.cycleUserAccount()">Logged in as: Guest</button>
         </div>
         <span id="adminStatusBadge" class="admin-badge" style="display: none;">Admin</span>
     </header>
@@ -588,20 +595,6 @@
                 <button class="btn" style="width: auto; padding: 0 20px;" onclick="window.addShoppingItem()">Add</button>
             </div>
             <div id="shoppingListContainer"></div>
-        </div>
-
-        <!-- LOG IN & ACCOUNT SELECTOR VIEW -->
-        <div id="view-account" class="view-content">
-            <div class="admin-card" style="text-align:center;">
-                <h2 style="margin-bottom: 12px;">LOG IN</h2>
-                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">Select your profile below to tie ratings, favorites, and collections to your name.</p>
-                <div class="form-group" style="text-align:left;">
-                    <label>Select Profile</label>
-                    <select id="userSelector" class="form-control" onchange="window.selectAccount(this.value)">
-                        <!-- Populated dynamically -->
-                    </select>
-                </div>
-            </div>
         </div>
 
         <!-- ADMIN PORTAL VIEW -->
@@ -714,10 +707,6 @@
             <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
             Grocery
         </button>
-        <button class="nav-item" onclick="window.switchView('account', this)">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            LOG IN
-        </button>
         <button class="nav-item" onclick="window.switchView('admin', this)">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
             Admin
@@ -778,7 +767,7 @@
 
         onValue(usersRef, (snapshot) => {
             users = snapshot.val() || {};
-            renderUserDropdown();
+            updateUserTag();
         });
 
         onValue(collectionsRef, (snapshot) => {
@@ -792,19 +781,19 @@
             document.getElementById('userProfileTag').innerText = `Logged in as: ${currentUser}`;
         }
 
-        function renderUserDropdown() {
-            const select = document.getElementById('userSelector');
-            if (!select) return;
-            const userKeys = Object.keys(users);
-            select.innerHTML = `<option value="Guest" ${currentUser === 'Guest' ? 'selected' : ''}>Guest</option>` + 
-                userKeys.map(k => `<option value="${users[k].name}" ${currentUser === users[k].name ? 'selected' : ''}>${users[k].name}</option>`).join('');
-        }
-
-        window.selectAccount = function(name) {
-            currentUser = name;
-            localStorage.setItem('recipe_current_user', name);
+        window.cycleUserAccount = function() {
+            const userList = ['Guest', ...Object.values(users).map(u => u.name)];
+            let currentIndex = userList.indexOf(currentUser);
+            if (currentIndex === -1 || currentIndex >= userList.length - 1) {
+                currentIndex = 0;
+            } else {
+                currentIndex++;
+            }
+            currentUser = userList[currentIndex];
+            localStorage.setItem('recipe_current_user', currentUser);
             updateUserTag();
-            alert(`Logged in as ${name}`);
+            window.filterAndRenderRecipes();
+            renderCollections();
         };
 
         window.switchView = function(viewName, element) {
@@ -819,7 +808,6 @@
             if (viewName === 'upload') headerTitle.innerText = 'Add New Recipe';
             if (viewName === 'collections') headerTitle.innerText = 'Saved Collections';
             if (viewName === 'shopping') headerTitle.innerText = 'Shopping List';
-            if (viewName === 'account') headerTitle.innerText = 'LOG IN';
             if (viewName === 'admin') {
                 headerTitle.innerText = 'Admin Portal';
                 renderAdminUI();
