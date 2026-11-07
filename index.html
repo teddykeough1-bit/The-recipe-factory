@@ -38,7 +38,7 @@
         header {
             background-color: var(--primary);
             color: white;
-            padding: 16px;
+            padding: 12px 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 10;
             display: flex;
@@ -50,22 +50,37 @@
             display: flex;
             flex-direction: column;
             align-items: flex-start;
+            gap: 4px;
         }
 
-        .user-tag {
-            font-size: 0.75rem;
+        .user-dropdown-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             background: rgba(255,255,255,0.25);
             padding: 2px 8px;
             border-radius: 12px;
-            margin-top: 4px;
-            font-weight: 600;
-            cursor: pointer;
+        }
+
+        .user-dropdown-label {
+            font-size: 0.75rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .user-dropdown-select {
+            background: transparent;
             border: none;
             color: white;
-            transition: background 0.2s;
+            font-size: 0.75rem;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
         }
-        .user-tag:hover {
-            background: rgba(255,255,255,0.4);
+
+        .user-dropdown-select option {
+            background: white;
+            color: var(--text-main);
         }
 
         .admin-badge {
@@ -516,7 +531,12 @@
     <header>
         <div class="header-left">
             <span id="app-header-title" style="font-weight:700;">Family Recipes</span>
-            <button id="userProfileTag" class="user-tag" onclick="window.cycleUserAccount()">Logged in as: Guest</button>
+            <div class="user-dropdown-container">
+                <span class="user-dropdown-label">LOG IN:</span>
+                <select id="headerUserSelect" class="user-dropdown-select" onchange="window.selectHeaderAccount(this.value)">
+                    <!-- Dynamically populated -->
+                </select>
+            </div>
         </div>
         <span id="adminStatusBadge" class="admin-badge" style="display: none;">Admin</span>
     </header>
@@ -689,7 +709,7 @@
         </div>
     </div>
 
-    <!-- BOTTOM NAVIGATION (4 TABS ONLY) -->
+    <!-- BOTTOM NAVIGATION -->
     <nav>
         <button class="nav-item active" onclick="window.switchView('browse', this)">
             <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
@@ -767,7 +787,7 @@
 
         onValue(usersRef, (snapshot) => {
             users = snapshot.val() || {};
-            updateUserTag();
+            renderHeaderUserDropdown();
         });
 
         onValue(collectionsRef, (snapshot) => {
@@ -775,23 +795,26 @@
             renderCollections();
         });
 
-        updateUserTag();
+        function renderHeaderUserDropdown() {
+            const select = document.getElementById('headerUserSelect');
+            if (!select) return;
 
-        function updateUserTag() {
-            document.getElementById('userProfileTag').innerText = `Logged in as: ${currentUser}`;
+            const userList = ['Guest', ...Object.values(users).map(u => u.name)];
+            
+            // If current user is deleted or not found, fall back to Guest
+            if (!userList.includes(currentUser)) {
+                currentUser = 'Guest';
+                localStorage.setItem('recipe_current_user', 'Guest');
+            }
+
+            select.innerHTML = userList.map(name => 
+                `<option value="${name}" ${name === currentUser ? 'selected' : ''}>${name}</option>`
+            ).join('');
         }
 
-        window.cycleUserAccount = function() {
-            const userList = ['Guest', ...Object.values(users).map(u => u.name)];
-            let currentIndex = userList.indexOf(currentUser);
-            if (currentIndex === -1 || currentIndex >= userList.length - 1) {
-                currentIndex = 0;
-            } else {
-                currentIndex++;
-            }
-            currentUser = userList[currentIndex];
-            localStorage.setItem('recipe_current_user', currentUser);
-            updateUserTag();
+        window.selectHeaderAccount = function(name) {
+            currentUser = name;
+            localStorage.setItem('recipe_current_user', name);
             window.filterAndRenderRecipes();
             renderCollections();
         };
