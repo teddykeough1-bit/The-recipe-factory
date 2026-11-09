@@ -53,32 +53,39 @@
             gap: 4px;
         }
 
-        .user-dropdown-container {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255,255,255,0.25);
-            padding: 2px 8px;
-            border-radius: 12px;
+        .user-pill-dropdown {
+            position: relative;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.35);
+            padding: 4px 12px;
+            border-radius: 16px;
         }
-
-        .user-dropdown-label {
-            font-size: 0.75rem;
-            color: white;
-            font-weight: 500;
-        }
-
-        .user-dropdown-select {
+        
+        .user-pill-select {
+            appearance: none;
+            -webkit-appearance: none;
             background: transparent;
             border: none;
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             font-weight: 700;
-            outline: none;
             cursor: pointer;
+            outline: none;
+            padding-right: 14px;
         }
 
-        .user-dropdown-select option {
+        .user-pill-dropdown::after {
+            content: '▼';
+            font-size: 0.6rem;
+            color: white;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .user-pill-select option {
             background: white;
             color: var(--text-main);
         }
@@ -207,7 +214,7 @@
 
         .recipe-img {
             width: 100%;
-            height: 160px;
+            height: 180px;
             object-fit: cover;
             border-radius: 8px;
             margin-bottom: 12px;
@@ -334,7 +341,7 @@
 
         textarea.form-control {
             resize: vertical;
-            height: 120px;
+            height: 100px;
         }
 
         .btn {
@@ -388,15 +395,14 @@
             text-transform: uppercase;
         }
 
+        /* TRUE FULLSCREEN MODAL */
         .app-modal-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: white;
+            z-index: 4000;
+            flex-direction: column;
         }
         .app-modal-overlay.active {
             display: flex;
@@ -404,18 +410,10 @@
         .app-modal-card {
             background: white;
             width: 100%;
-            max-width: 550px;
-            max-height: 85vh;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            height: 100%;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            animation: popIn 0.2s ease-out;
-        }
-        @keyframes popIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
         }
         .app-modal-header {
             padding: 16px;
@@ -429,12 +427,13 @@
             padding: 20px;
             overflow-y: auto;
             flex: 1;
+            padding-bottom: calc(40px + var(--safe-bottom));
         }
         .app-modal-close {
             background: none;
             border: none;
             color: white;
-            font-size: 1.5rem;
+            font-size: 2rem;
             cursor: pointer;
             line-height: 1;
         }
@@ -478,28 +477,41 @@
             margin: 8px 0;
         }
 
+        /* SLIDE COOKING MODE */
         .cooking-mode-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background: #FFF;
-            z-index: 3000;
+            z-index: 5000;
             flex-direction: column;
             padding: 24px;
         }
         .cooking-mode-overlay.active {
             display: flex;
         }
-        .step-focus-text {
+        .step-focus-card {
             flex: 1;
-            font-size: 1.5rem;
-            line-height: 1.5;
-            color: #222;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             padding: 20px;
+            background: #F8F9FA;
+            border-radius: 12px;
+            margin: 16px 0;
+            border: 1px solid var(--border-color);
+        }
+        .step-title-slide {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .step-focus-text {
+            font-size: 1.3rem;
+            line-height: 1.5;
+            color: #222;
         }
 
         .shopping-item {
@@ -524,6 +536,16 @@
             margin-top: 6px;
             font-size: 0.85rem;
         }
+
+        .section-label-header {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 16px;
+            margin-bottom: 6px;
+        }
     </style>
 </head>
 <body>
@@ -531,9 +553,8 @@
     <header>
         <div class="header-left">
             <span id="app-header-title" style="font-weight:700;">Family Recipes</span>
-            <div class="user-dropdown-container">
-                <span class="user-dropdown-label">LOG IN:</span>
-                <select id="headerUserSelect" class="user-dropdown-select" onchange="window.selectHeaderAccount(this.value)">
+            <div class="user-pill-dropdown">
+                <select id="headerUserSelect" class="user-pill-select" onchange="window.selectHeaderAccount(this.value)">
                     <!-- Dynamically populated -->
                 </select>
             </div>
@@ -584,6 +605,10 @@
                 <input type="url" id="upImage" class="form-control" placeholder="https://images.unsplash.com/photo-...">
             </div>
             <div class="form-group">
+                <label>Preset Cooking Timer (Minutes, Optional)</label>
+                <input type="number" id="upTimerMins" class="form-control" placeholder="e.g., 25">
+            </div>
+            <div class="form-group">
                 <label>Dietary & Quick Tags</label>
                 <div style="display:flex; gap:12px; font-size:0.9rem;">
                     <label><input type="checkbox" id="tagVeg"> Vegetarian</label>
@@ -592,17 +617,21 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Recipe Details & Ingredients</label>
-                <textarea id="upDetails" class="form-control" placeholder="List ingredients with numbers (e.g., 2 eggs, 250g flour) and step-by-step instructions..."></textarea>
+                <label>Ingredients List (One per line)</label>
+                <textarea id="upIngredients" class="form-control" placeholder="1 cup whole milk&#10;0.5 cups peanut butter&#10;2 tbsp brown sugar..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Step-by-Step Instructions & Steps</label>
+                <textarea id="upDetails" class="form-control" placeholder="1. Blend the base ingredients together...&#10;2. Pour into pint container and freeze overnight..."></textarea>
             </div>
             <button class="btn" onclick="window.saveUploadedRecipe()">Save Recipe Card</button>
         </div>
 
         <!-- COLLECTIONS VIEW -->
         <div id="view-collections" class="view-content">
-            <h3 style="margin-bottom:12px;">My Saved Collections</h3>
+            <h3 style="margin-bottom:12px;">Saved Collections</h3>
             <div class="form-group" style="display:flex; gap:8px;">
-                <input type="text" id="newCollectionName" class="form-control" placeholder="New collection name (e.g., Sunday Roast)...">
+                <input type="text" id="newCollectionName" class="form-control" placeholder="New collection name...">
                 <button class="btn" style="width:auto; padding: 0 16px;" onclick="window.createCollection()">Create</button>
             </div>
             <div id="collectionsContainer"></div>
@@ -624,19 +653,19 @@
 
     </div>
 
-    <!-- IN-APP WINDOW MODAL -->
-    <div class="app-modal-overlay" id="recipeModal" onclick="window.closeAppModal(event)">
-        <div class="app-modal-card" onclick="event.stopPropagation()">
+    <!-- TRUE FULLSCREEN IN-APP MODAL -->
+    <div class="app-modal-overlay" id="recipeModal">
+        <div class="app-modal-card">
             <div class="app-modal-header">
                 <span class="recipe-category" id="modalCategory" style="margin: 0; background: white; color: var(--primary);">CATEGORY</span>
                 <button class="app-modal-close" onclick="window.closeAppModal()">&times;</button>
             </div>
             <div class="app-modal-body">
-                <img id="modalImage" class="recipe-img" style="display:none;" alt="Recipe photo">
-                <h2 id="modalTitle" style="margin-bottom: 8px; font-size: 1.4rem;">Recipe Title</h2>
+                <img id="modalImage" class="recipe-img" style="display:none; height:220px;" alt="Recipe photo">
+                <h2 id="modalTitle" style="margin-bottom: 8px; font-size: 1.6rem;">Recipe Title</h2>
                 
-                <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-                    <button class="card-btn" style="background:#E8F5E9; color:#2E7D32;" onclick="window.markRecipeCooked()">🍳 Cooked This Today</button>
+                <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                    <button class="card-btn" style="background:#E8F5E9; color:#2E7D32;" onclick="window.markRecipeCooked()">🍳 Cooked Today</button>
                     <button class="card-btn" onclick="window.startCookingMode()">📖 Cooking Mode</button>
                     <button class="card-btn" onclick="window.exportRecipeCard()">📋 Export Card</button>
                     <button class="card-btn" onclick="window.promptAddToCollection()">📁 Add to Collection</button>
@@ -656,7 +685,7 @@
                     </div>
                 </div>
 
-                <!-- Interactive Kitchen Timer -->
+                <!-- Kitchen Timer -->
                 <div class="utility-box">
                     <div class="utility-title">Kitchen Timer</div>
                     <div class="timer-preset-btns">
@@ -672,9 +701,13 @@
                     </div>
                 </div>
 
-                <div id="modalDetails" class="recipe-details" style="font-size: 1rem; color: #333;">Details...</div>
+                <div class="section-label-header">Ingredients</div>
+                <div id="modalIngredients" class="recipe-details" style="font-size: 1rem; color: #333;">Ingredients...</div>
                 
-                <button class="btn" style="margin-top: 16px; background: #2E7D32;" onclick="window.addRecipeToShoppingList()">+ Add Ingredients to Shopping List</button>
+                <button class="btn" style="margin-top: 12px; margin-bottom: 20px; background: #2E7D32;" onclick="window.addRecipeToShoppingList()">+ Add Ingredients to Shopping List</button>
+
+                <div class="section-label-header">Step-by-Step Instructions</div>
+                <div id="modalDetails" class="recipe-details" style="font-size: 1rem; color: #333;">Steps...</div>
 
                 <!-- Reviews & Ratings Section -->
                 <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:16px;">
@@ -696,16 +729,20 @@
         </div>
     </div>
 
-    <!-- FULLSCREEN STEP-BY-STEP COOKING MODE -->
+    <!-- SLIDE-BASED STEP-BY-STEP COOKING MODE -->
     <div class="cooking-mode-overlay" id="cookingModeOverlay">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span id="cookingStepHeader" style="font-weight:700; color:var(--primary);">Step 1</span>
+            <span id="cookingSlideHeader" style="font-weight:700; color:var(--primary);">Slide 1</span>
             <button class="card-btn delete-btn" onclick="window.exitCookingMode()">Exit Cooking Mode</button>
         </div>
-        <div class="step-focus-text" id="cookingStepText">Loading step...</div>
+
+        <div class="step-focus-card" id="stepFocusCard">
+            <!-- Slide content renders dynamically -->
+        </div>
+
         <div style="display:flex; gap:12px;">
-            <button class="btn" style="background:#666;" onclick="window.navStep(-1)">Previous</button>
-            <button class="btn" onclick="window.navStep(1)">Next Step</button>
+            <button class="btn" style="background:#666;" onclick="window.navSlide(-1)">Previous</button>
+            <button class="btn" onclick="window.navSlide(1)">Next Slide</button>
         </div>
     </div>
 
@@ -765,6 +802,7 @@
 
         let currentModalKey = null;
         let currentModalRecipe = null;
+        let originalModalIngredients = '';
         let originalModalDetails = '';
         let currentUnitSystem = 'metric';
 
@@ -772,8 +810,8 @@
         let timerSeconds = 0;
         let timerRunning = false;
 
-        let cookingSteps = [];
-        let currentStepIdx = 0;
+        let slides = [];
+        let currentSlideIdx = 0;
 
         onValue(recipesRef, (snapshot) => {
             recipes = snapshot.val() || {};
@@ -801,14 +839,13 @@
 
             const userList = ['Guest', ...Object.values(users).map(u => u.name)];
             
-            // If current user is deleted or not found, fall back to Guest
             if (!userList.includes(currentUser)) {
                 currentUser = 'Guest';
                 localStorage.setItem('recipe_current_user', 'Guest');
             }
 
             select.innerHTML = userList.map(name => 
-                `<option value="${name}" ${name === currentUser ? 'selected' : ''}>${name}</option>`
+                `<option value="${name}" ${name === currentUser ? 'selected' : ''}>Logged in as: ${name}</option>`
             ).join('');
         }
 
@@ -925,6 +962,7 @@
                 renderAdminUI();
                 document.getElementById('adminStatusBadge').style.display = 'inline-block';
                 window.filterAndRenderRecipes();
+                renderCollections();
             } else {
                 alert('Incorrect password!');
             }
@@ -936,6 +974,7 @@
             document.getElementById('adminStatusBadge').style.display = 'none';
             renderAdminUI();
             window.filterAndRenderRecipes();
+            renderCollections();
         };
 
         window.setFilter = function(filterType, pillElement) {
@@ -958,6 +997,7 @@
 
             const filtered = recipeEntries.filter(([key, recipe]) => {
                 const matchesSearch = (recipe.title || '').toLowerCase().includes(searchQuery) || 
+                                     (recipe.ingredients || '').toLowerCase().includes(searchQuery) ||
                                      (recipe.details || '').toLowerCase().includes(searchQuery);
                 
                 if (!matchesSearch) return false;
@@ -987,6 +1027,7 @@
                                 ${recipe.veg ? `<span class="tag-badge">Veg</span>` : ''}
                                 ${recipe.gf ? `<span class="tag-badge">Gluten-Free</span>` : ''}
                                 ${recipe.quick ? `<span class="tag-badge">Quick</span>` : ''}
+                                ${recipe.timerMins ? `<span class="tag-badge" style="background:#FFF3E0; color:#E65100;">⏱️ ${recipe.timerMins}m</span>` : ''}
                             </div>
                             <div class="recipe-title">${recipe.title}</div>
                         </div>
@@ -1003,6 +1044,11 @@
                         <span>🍳 Cooked ${recipe.cookCount || 0}x</span>
                         <span>⭐ ${calcAvgRating(recipe.reviews)}</span>
                     </div>
+                    ${recipe.ingredients ? `
+                        <div style="font-weight:700; font-size:0.8rem; margin-top:8px; color:var(--primary);">INGREDIENTS</div>
+                        <div class="recipe-details">${recipe.ingredients}</div>
+                    ` : ''}
+                    <div style="font-weight:700; font-size:0.8rem; margin-top:8px; color:var(--text-muted);">STEPS</div>
                     <div class="recipe-details">${recipe.details}</div>
                 </div>
             `).join('');
@@ -1047,23 +1093,28 @@
             const title = document.getElementById('upTitle').value.trim();
             const category = document.getElementById('upCategory').value;
             const image = document.getElementById('upImage').value.trim();
+            const timerMins = document.getElementById('upTimerMins').value.trim();
+            const ingredients = document.getElementById('upIngredients').value.trim();
             const details = document.getElementById('upDetails').value.trim();
             const veg = document.getElementById('tagVeg').checked;
             const gf = document.getElementById('tagGF').checked;
             const quick = document.getElementById('tagQuick').checked;
 
             if(!title || !details) {
-                alert('Please fill in title and details.');
+                alert('Please fill in title and instructions.');
                 return;
             }
 
             push(recipesRef, {
-                title, category, image, details, veg, gf, quick,
+                title, category, image, ingredients, details, veg, gf, quick,
+                timerMins: timerMins ? parseInt(timerMins) : null,
                 cookCount: 0,
                 createdAt: Date.now()
             }).then(() => {
                 document.getElementById('upTitle').value = '';
                 document.getElementById('upImage').value = '';
+                document.getElementById('upTimerMins').value = '';
+                document.getElementById('upIngredients').value = '';
                 document.getElementById('upDetails').value = '';
                 window.switchView('browse', document.querySelectorAll('nav .nav-item')[0]);
             });
@@ -1075,11 +1126,13 @@
 
             currentModalKey = key;
             currentModalRecipe = recipe;
-            originalModalDetails = recipe.details;
+            originalModalIngredients = recipe.ingredients || '';
+            originalModalDetails = recipe.details || '';
 
             document.getElementById('modalCategory').innerText = recipe.category;
             document.getElementById('modalTitle').innerText = recipe.title;
-            document.getElementById('modalDetails').innerText = recipe.details;
+            document.getElementById('modalIngredients').innerText = recipe.ingredients || 'No separate ingredients list provided.';
+            document.getElementById('modalDetails').innerText = recipe.details || '';
             
             const modalImg = document.getElementById('modalImage');
             if (recipe.image) {
@@ -1089,16 +1142,20 @@
                 modalImg.style.display = 'none';
             }
 
+            if (recipe.timerMins) {
+                window.setKitchenTimer(recipe.timerMins);
+            } else {
+                window.resetTimer();
+            }
+
             renderReviews(recipe.reviews);
 
             document.querySelectorAll('.scale-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
             document.getElementById('recipeModal').classList.add('active');
         };
 
-        window.closeAppModal = function(e) {
-            if (!e || e.target === document.getElementById('recipeModal') || e.currentTarget.classList.contains('app-modal-close')) {
-                document.getElementById('recipeModal').classList.remove('active');
-            }
+        window.closeAppModal = function() {
+            document.getElementById('recipeModal').classList.remove('active');
         };
 
         window.markRecipeCooked = function() {
@@ -1112,7 +1169,7 @@
 
         window.exportRecipeCard = function() {
             if (!currentModalRecipe) return;
-            const text = `📖 ${currentModalRecipe.title.toUpperCase()}\nCategory: ${currentModalRecipe.category}\n\n${currentModalRecipe.details}`;
+            const text = `📖 ${currentModalRecipe.title.toUpperCase()}\nCategory: ${currentModalRecipe.category}\n\nINGREDIENTS:\n${currentModalRecipe.ingredients || 'N/A'}\n\nINSTRUCTIONS:\n${currentModalRecipe.details}`;
             navigator.clipboard.writeText(text).then(() => {
                 alert("Recipe card copied to clipboard!");
             });
@@ -1122,14 +1179,21 @@
             document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
             element.classList.add('active');
 
-            if (!originalModalDetails) return;
+            if (originalModalIngredients) {
+                const scaledIng = originalModalIngredients.replace(/(\d+(\.\d+)?)/g, (match) => {
+                    const num = parseFloat(match);
+                    return (num * factor).toString();
+                });
+                document.getElementById('modalIngredients').innerText = scaledIng;
+            }
 
-            const scaledText = originalModalDetails.replace(/(\d+(\.\d+)?)/g, (match) => {
-                const num = parseFloat(match);
-                return (num * factor).toString();
-            });
-
-            document.getElementById('modalDetails').innerText = scaledText;
+            if (originalModalDetails) {
+                const scaledDetails = originalModalDetails.replace(/(\d+(\.\d+)?)/g, (match) => {
+                    const num = parseFloat(match);
+                    return (num * factor).toString();
+                });
+                document.getElementById('modalDetails').innerText = scaledDetails;
+            }
         };
 
         window.toggleUnits = function(system) {
@@ -1137,36 +1201,58 @@
             document.getElementById('unitMetricBtn').classList.toggle('active', system === 'metric');
             document.getElementById('unitImperialBtn').classList.toggle('active', system === 'imperial');
 
-            if (!originalModalDetails) return;
-
-            let converted = originalModalDetails;
-            if (system === 'imperial') {
-                converted = converted.replace(/(\d+)\s*g/gi, (m, g) => `${(parseInt(g) / 28.35).toFixed(1)} oz`);
-                converted = converted.replace(/(\d+)\s*ml/gi, (m, ml) => `${(parseInt(ml) / 240).toFixed(1)} cups`);
+            if (originalModalIngredients) {
+                let converted = originalModalIngredients;
+                if (system === 'imperial') {
+                    converted = converted.replace(/(\d+)\s*g/gi, (m, g) => `${(parseInt(g) / 28.35).toFixed(1)} oz`);
+                    converted = converted.replace(/(\d+)\s*ml/gi, (m, ml) => `${(parseInt(ml) / 240).toFixed(1)} cups`);
+                }
+                document.getElementById('modalIngredients').innerText = converted;
             }
-            document.getElementById('modalDetails').innerText = converted;
         };
 
+        /* SLIDE COOKING MODE IMPLEMENTATION */
         window.startCookingMode = function() {
             if (!originalModalDetails) return;
-            cookingSteps = originalModalDetails.split('\n').filter(s => s.trim().length > 0);
-            if (cookingSteps.length === 0) return;
+            const rawLines = originalModalDetails.split('\n').filter(s => s.trim().length > 0);
+            if (rawLines.length === 0) return;
             
-            currentStepIdx = 0;
-            renderCookingStep();
+            slides = [];
+            rawLines.forEach((line, idx) => {
+                slides.push({ type: 'header', text: `Step ${idx + 1}` });
+                slides.push({ type: 'content', text: line, stepNum: idx + 1 });
+            });
+
+            currentSlideIdx = 0;
+            renderCookingSlide();
             document.getElementById('cookingModeOverlay').classList.add('active');
         };
 
-        window.navStep = function(dir) {
-            currentStepIdx += dir;
-            if (currentStepIdx < 0) currentStepIdx = 0;
-            if (currentStepIdx >= cookingSteps.length) currentStepIdx = cookingSteps.length - 1;
-            renderCookingStep();
+        window.navSlide = function(dir) {
+            currentSlideIdx += dir;
+            if (currentSlideIdx < 0) currentSlideIdx = 0;
+            if (currentSlideIdx >= slides.length) currentSlideIdx = slides.length - 1;
+            renderCookingSlide();
         };
 
-        function renderCookingStep() {
-            document.getElementById('cookingStepHeader').innerText = `Step ${currentStepIdx + 1} of ${cookingSteps.length}`;
-            document.getElementById('cookingStepText').innerText = cookingSteps[currentStepIdx];
+        function renderCookingSlide() {
+            const card = document.getElementById('stepFocusCard');
+            const current = slides[currentSlideIdx];
+            document.getElementById('cookingSlideHeader').innerText = `Slide ${currentSlideIdx + 1} of ${slides.length}`;
+
+            if (current.type === 'header') {
+                card.innerHTML = `<div class="step-title-slide">${current.text}</div>`;
+            } else {
+                card.innerHTML = `
+                    <div style="font-size:0.9rem; font-weight:700; color:var(--text-muted); margin-bottom:12px;">STEP ${current.stepNum} INSTRUCTIONS</div>
+                    <div class="step-focus-text">${current.text}</div>
+                    ${currentModalRecipe && currentModalRecipe.timerMins ? `
+                        <button class="card-btn" style="margin-top:20px; padding:8px 16px; background:var(--primary); color:white; border:none;" onclick="window.setKitchenTimer(${currentModalRecipe.timerMins}); window.toggleTimer();">
+                            ⏱️ Start ${currentModalRecipe.timerMins}m Timer
+                        </button>
+                    ` : ''}
+                `;
+            }
         }
 
         window.exitCookingMode = function() {
@@ -1220,18 +1306,26 @@
 
         window.addRecipeToShoppingList = function() {
             if (!currentModalRecipe) return;
-            const lines = currentModalRecipe.details.split('\n');
+            
+            // Only parse the dedicated ingredients field
+            const ingSource = currentModalRecipe.ingredients || '';
+            const lines = ingSource.split('\n');
             let addedCount = 0;
 
             lines.forEach(line => {
                 const cleanLine = line.trim();
-                if (cleanLine.length > 0) {
+                // Avoid headers/numbers
+                if (cleanLine.length > 0 && !/^\d+$/.test(cleanLine)) {
                     push(shoppingRef, { name: cleanLine, checked: false });
                     addedCount++;
                 }
             });
 
-            if (addedCount > 0) alert(`Added ${addedCount} items to your shopping list!`);
+            if (addedCount > 0) {
+                alert(`Added ${addedCount} ingredients to your shopping list!`);
+            } else {
+                alert("No dedicated ingredients found. Please add ingredients in the Add Recipe screen.");
+            }
         };
 
         function renderShoppingList() {
@@ -1307,6 +1401,13 @@
             }).then(() => { input.value = ''; });
         };
 
+        window.deleteCollection = function(key) {
+            if (!isAdmin) return;
+            if (confirm("Delete this saved collection list?")) {
+                remove(ref(db, `collections/${key}`));
+            }
+        };
+
         window.promptAddToCollection = function() {
             if (!currentModalKey) return;
             const userCols = Object.entries(collections).filter(([k, c]) => c.owner === currentUser);
@@ -1331,18 +1432,21 @@
             const container = document.getElementById('collectionsContainer');
             if (!container) return;
 
-            const userCols = Object.entries(collections).filter(([k, c]) => c.owner === currentUser);
-            if (userCols.length === 0) {
+            const allCols = Object.entries(collections);
+            if (allCols.length === 0) {
                 container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:30px;">No saved collections yet.</p>`;
                 return;
             }
 
-            container.innerHTML = userCols.map(([key, col]) => {
+            container.innerHTML = allCols.map(([key, col]) => {
                 const colRecipes = col.recipes ? Object.keys(col.recipes).map(rk => recipes[rk]).filter(Boolean) : [];
                 return `
                     <div class="admin-card" style="margin-bottom:12px;">
-                        <h3>${col.name}</h3>
-                        <p style="font-size:0.8rem; color:var(--text-muted);">${colRecipes.length} recipes</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3>${col.name}</h3>
+                            ${isAdmin ? `<button class="card-btn delete-btn" onclick="window.deleteCollection('${key}')">Delete List</button>` : ''}
+                        </div>
+                        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">Owner: ${col.owner} • ${colRecipes.length} recipes</p>
                         <div style="margin-top:8px;">
                             ${colRecipes.map(r => `<div style="font-size:0.9rem; padding:2px 0;">• ${r.title}</div>`).join('')}
                         </div>
