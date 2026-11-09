@@ -90,13 +90,19 @@
             color: var(--text-main);
         }
 
-        .admin-badge {
-            font-size: 0.75rem;
+        .admin-header-btn {
             background: rgba(0,0,0,0.25);
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
             font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .admin-header-btn.active {
+            background: #2E7D32;
         }
 
         .main-container {
@@ -409,11 +415,12 @@
         }
         .app-modal-card {
             background: white;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            border-radius: 0;
         }
         .app-modal-header {
             padding: 16px;
@@ -559,7 +566,7 @@
                 </select>
             </div>
         </div>
-        <span id="adminStatusBadge" class="admin-badge" style="display: none;">Admin</span>
+        <button id="adminHeaderBtn" class="admin-header-btn" onclick="window.switchView('admin', document.querySelectorAll('nav .nav-item')[4])">Admin</button>
     </header>
 
     <div class="main-container">
@@ -833,6 +840,21 @@
             renderCollections();
         });
 
+        updateAdminHeaderUI();
+
+        function updateAdminHeaderUI() {
+            const btn = document.getElementById('adminHeaderBtn');
+            if (btn) {
+                if (isAdmin) {
+                    btn.innerText = 'Admin Active';
+                    btn.classList.add('active');
+                } else {
+                    btn.innerText = 'Admin';
+                    btn.classList.remove('active');
+                }
+            }
+        }
+
         function renderHeaderUserDropdown() {
             const select = document.getElementById('headerUserSelect');
             if (!select) return;
@@ -873,7 +895,7 @@
                 renderAdminUI();
             }
 
-            document.getElementById('adminStatusBadge').style.display = isAdmin ? 'inline-block' : 'none';
+            updateAdminHeaderUI();
         };
 
         function renderAdminUI() {
@@ -959,8 +981,8 @@
             if (pwd === 'FOOD') {
                 isAdmin = true;
                 localStorage.setItem('recipe_admin_auth', 'true');
+                updateAdminHeaderUI();
                 renderAdminUI();
-                document.getElementById('adminStatusBadge').style.display = 'inline-block';
                 window.filterAndRenderRecipes();
                 renderCollections();
             } else {
@@ -971,7 +993,7 @@
         window.adminSignOut = function() {
             isAdmin = false;
             localStorage.removeItem('recipe_admin_auth');
-            document.getElementById('adminStatusBadge').style.display = 'none';
+            updateAdminHeaderUI();
             renderAdminUI();
             window.filterAndRenderRecipes();
             renderCollections();
@@ -1307,14 +1329,12 @@
         window.addRecipeToShoppingList = function() {
             if (!currentModalRecipe) return;
             
-            // Only parse the dedicated ingredients field
             const ingSource = currentModalRecipe.ingredients || '';
             const lines = ingSource.split('\n');
             let addedCount = 0;
 
             lines.forEach(line => {
                 const cleanLine = line.trim();
-                // Avoid headers/numbers
                 if (cleanLine.length > 0 && !/^\d+$/.test(cleanLine)) {
                     push(shoppingRef, { name: cleanLine, checked: false });
                     addedCount++;
